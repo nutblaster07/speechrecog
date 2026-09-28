@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Recognition</title>
+    <style>
+        /* Styling for the page */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            margin: 20px auto;
+            max-width: 400px;
+            text-align: center;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="file"] {
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #28a745;
+            text-align: center;
+        }
+        .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>Speech Recognition App</h1>
+    <form id="uploadForm">
+        <label for="audioFile">Upload Audio File:</label>
+        <input type="file" id="audioFile" name="file" accept=".wav,.flac" required>
+        <button type="submit">Upload & Predict</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        // JavaScript for handling file upload and prediction
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default form submission
+
+            // Get the audio file from the input
+            const audioFile = document.getElementById('audioFile').files[0];
+            if (!audioFile) {
+                alert("Please select a file");
+                return;
+            }
+
+            // Validate the file type (only accept .wav or .flac files)
+            const allowedTypes = ['audio/wav', 'audio/x-wav', 'audio/flac'];
+            if (!allowedTypes.includes(audioFile.type)) {
+                alert("Please upload a valid audio file (.wav or .flac)");
+                return;
+            }
+
+            // Prepare the file for upload
+            const formData = new FormData();
+            formData.append('file', audioFile);
+
+            try {
+                // Send the file to the Flask backend
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Handle response from the server
+                if (!response.ok) {
+                    throw new Error('Prediction failed. Check the server.');
+                }
+
+                const result = await response.json();
+                console.log(result); // Log response for debugging
+
+                // Display the prediction result on the page
+                if (result.prediction) {
+                    document.getElementById('result').innerHTML = 
+                        `<span>Prediction:</span> ${result.prediction}`;
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        `<span class="error">Error:</span> ${result.error || 'An unexpected error occurred.'}`;
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById('result').innerHTML = 
+                    `<span class="error">An error occurred while processing your request.</span>`;
+            }
+        });
+    </script>
+</body>
+</html>
